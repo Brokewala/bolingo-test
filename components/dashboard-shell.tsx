@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { switchDashboard } from "@/lib/api/auth";
+import { becomeSeller } from "@/lib/api/dashboard";
 import { fetchCurrentUser, logoutUser } from "@/lib/api/users";
 import {
   dashboardPath,
@@ -110,7 +110,7 @@ export function DashboardShell({ kind }: DashboardShellProps) {
     setSwitching(true);
     setActionMessage(null);
 
-    const result = await switchDashboard(session.access);
+    const result = await becomeSeller(session.access);
     setSwitching(false);
 
     if (!result.ok) {
@@ -118,7 +118,7 @@ export function DashboardShell({ kind }: DashboardShellProps) {
       return;
     }
 
-    updateAuthUser(result.data.user);
+    updateAuthUser(result.data.profile);
     setSession(getAuthSession());
     setActionMessage(result.data.detail);
     router.replace(dashboardPath("seller"));
@@ -220,7 +220,7 @@ export function DashboardShell({ kind }: DashboardShellProps) {
           >
             {switching
               ? "Activation…"
-              : "POST /auth/switch-dashboard — Devenir vendeur"}
+              : "POST /buyer/become-seller — Devenir vendeur"}
           </button>
         )}
 

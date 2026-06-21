@@ -67,9 +67,15 @@ export default function LoginPage() {
     }
 
     setPhoneStep("code");
+    const devHint = result.data.dev_code
+      ? ` Code dev : ${result.data.dev_code}`
+      : "";
     setOtpSentMessage(
-      `${result.data.detail} (expire dans ${result.data.expires_in_seconds}s)`,
+      `${result.data.detail} (expire dans ${result.data.expires_in_seconds}s)${devHint}`,
     );
+    if (result.data.dev_code) {
+      setOtpCode(result.data.dev_code);
+    }
   }
 
   async function handleVerifyOtp(event: React.FormEvent) {

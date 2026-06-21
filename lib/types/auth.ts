@@ -6,6 +6,7 @@ export type AuthUserProfile = {
   first_name: string;
   last_name: string;
   avatar_url: string;
+  quartier?: string;
   is_buyer: boolean;
   is_seller: boolean;
   is_staff: boolean;
@@ -40,6 +41,7 @@ export type AuthSuccess = {
 export type SendOTPSuccess = {
   detail: string;
   expires_in_seconds: number;
+  dev_code?: string | null;
 };
 
 export type SwitchDashboardSuccess = {

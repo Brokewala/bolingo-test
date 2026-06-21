@@ -6,6 +6,15 @@ import {
 } from "@/lib/api/config";
 
 export async function POST(request: Request) {
+  const authorization = request.headers.get("authorization");
+
+  if (!authorization) {
+    return NextResponse.json(
+      { detail: "Token JWT manquant." },
+      { status: 401 },
+    );
+  }
+
   let body: unknown;
 
   try {
@@ -18,9 +27,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const response = await fetch(`${DJANGO_API_URL}/api/auth/google/`, {
+    const response = await fetch(`${DJANGO_API_URL}/api/users/logout`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Authorization: authorization,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(body),
       cache: "no-store",
     });

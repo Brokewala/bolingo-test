@@ -5,23 +5,20 @@ import {
   DJANGO_UNAVAILABLE_MESSAGE,
 } from "@/lib/api/config";
 
-export async function POST(request: Request) {
-  let body: unknown;
+export async function GET(request: Request) {
+  const authorization = request.headers.get("authorization");
 
-  try {
-    body = await request.json();
-  } catch {
+  if (!authorization) {
     return NextResponse.json(
-      { detail: "Corps JSON invalide." },
-      { status: 400 },
+      { detail: "Token JWT manquant." },
+      { status: 401 },
     );
   }
 
   try {
-    const response = await fetch(`${DJANGO_API_URL}/api/auth/google/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+    const response = await fetch(`${DJANGO_API_URL}/api/users/me`, {
+      method: "GET",
+      headers: { Authorization: authorization },
       cache: "no-store",
     });
 

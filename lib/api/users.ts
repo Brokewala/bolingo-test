@@ -1,6 +1,11 @@
 import { clientFetch } from "@/lib/api/client";
 import type { ApiResult } from "@/lib/api/client";
-import type { LogoutSuccess, UserOut } from "@/lib/types/auth";
+import type {
+  LogoutSuccess,
+  RegistrationCompletePayload,
+  RegistrationCompleteSuccess,
+  UserOut,
+} from "@/lib/types/auth";
 
 function authHeaders(accessToken: string): HeadersInit {
   return {
@@ -30,4 +35,19 @@ export async function logoutUser(
     headers: authHeaders(accessToken),
     body: JSON.stringify({ refresh_token: refreshToken }),
   });
+}
+
+/** POST /api/users/registration/complete — finalisation profil après OTP */
+export async function completeRegistration(
+  accessToken: string,
+  payload: RegistrationCompletePayload,
+): Promise<ApiResult<RegistrationCompleteSuccess>> {
+  return clientFetch<RegistrationCompleteSuccess>(
+    "/api/users/registration/complete",
+    {
+      method: "POST",
+      headers: authHeaders(accessToken),
+      body: JSON.stringify(payload),
+    },
+  );
 }

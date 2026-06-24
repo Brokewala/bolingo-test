@@ -44,6 +44,26 @@ export type SendOTPSuccess = {
   dev_code?: string | null;
 };
 
+export type EmailRequestOTPSuccess = {
+  detail: string;
+  expires_in_seconds: number;
+  account_exists: boolean;
+  dev_code?: string | null;
+};
+
+export type RegistrationCompletePayload = {
+  prenom: string;
+  nom: string;
+  ile: string;
+  ville: string;
+  quartier?: string | null;
+};
+
+export type RegistrationCompleteSuccess = {
+  detail: string;
+  profile: AuthUserProfile;
+};
+
 export type SwitchDashboardSuccess = {
   detail: string;
   user: AuthUserProfile;
@@ -60,6 +80,10 @@ export type AuthResult =
 
 export type SendOTPResult =
   | { ok: true; data: SendOTPSuccess }
+  | { ok: false; status: number; error: string };
+
+export type EmailRequestOTPResult =
+  | { ok: true; data: EmailRequestOTPSuccess }
   | { ok: false; status: number; error: string };
 
 export type VerifyOTPResult = AuthResult;

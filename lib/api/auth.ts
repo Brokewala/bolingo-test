@@ -2,6 +2,7 @@ import { clientFetch } from "@/lib/api/client";
 import type {
   AuthResult,
   AuthSuccess,
+  EmailRequestOTPResult,
   SendOTPResult,
   SwitchDashboardResult,
   VerifyOTPResult,
@@ -59,6 +60,50 @@ export async function verifyOtp(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone_number: phoneNumber, code }),
+  });
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      status: result.status,
+      error: result.status === 0 ? NETWORK_ERROR : result.error,
+    };
+  }
+
+  return { ok: true, data: result.data };
+}
+
+export async function requestEmailOtp(email: string): Promise<EmailRequestOTPResult> {
+  const result = await clientFetch<{
+    detail: string;
+    expires_in_seconds: number;
+    account_exists: boolean;
+    dev_code?: string | null;
+  }>("/api/auth/email/request-otp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: email.trim() }),
+  });
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      status: result.status,
+      error: result.status === 0 ? NETWORK_ERROR : result.error,
+    };
+  }
+
+  return { ok: true, data: result.data };
+}
+
+export async function verifyEmailOtp(
+  email: string,
+  code: string,
+): Promise<VerifyOTPResult> {
+  const result = await clientFetch<AuthSuccess>("/api/auth/email/verify-otp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: email.trim(), code: code.trim() }),
   });
 
   if (!result.ok) {

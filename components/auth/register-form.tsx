@@ -13,23 +13,21 @@ import {
   type RegistrationProfileValues,
 } from "@/components/auth/registration-profile-form";
 import {
-  loginWithGoogleIdToken,
-  requestEmailOtp,
-  sendOtp,
-  verifyEmailOtp,
-  verifyOtp,
+  registerUser,
+  resendOtp,
+  verifyOtpUnified,
 } from "@/lib/api/auth";
 import { completeRegistration } from "@/lib/api/users";
 import { mapAuthErrorMessage } from "@/lib/auth/errors";
 import { saveAuthSession, updateAuthUser } from "@/lib/auth/session";
 import { validateEmail, validatePhoneNumber } from "@/lib/auth/validation";
-import type { AuthSuccess } from "@/lib/types/auth";
+import type { AuthSuccess, RegisterPendingSuccess } from "@/lib/types/auth";
 
 type RegisterStep = "method" | "otp" | "profile";
 type OtpChannel = "phone" | "email";
 
 /**
- * Page d'inscription — choix de méthode, OTP puis finalisation profil.
+ * Page d'inscription — POST /auth/register/, OTP, profil.
  */
 export function RegisterForm() {
   const router = useRouter();
@@ -37,6 +35,7 @@ export function RegisterForm() {
   const [method, setMethod] = useState<AuthMethod>("email");
   const [phoneNumber, setPhoneNumber] = useState("+269");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [authSession, setAuthSession] = useState<AuthSuccess | null>(null);
   const [activeChannel, setActiveChannel] = useState<OtpChannel>("email");
@@ -62,11 +61,24 @@ export function RegisterForm() {
     setStep("profile");
   }
 
+  function applyPendingOtp(result: RegisterPendingSuccess, channel: OtpChannel) {
+    setActiveChannel(channel);
+    setStep("otp");
+    setLastSentAt(Date.now());
+    setOtpMessage(result.detail);
+    if (result.dev_code) {
+      setOtpCode(result.dev_code);
+    }
+  }
+
   async function handleGoogleSuccess(idToken: string) {
     setLoading(true);
     setError(null);
 
-    const result = await loginWithGoogleIdToken(idToken);
+    const result = await registerUser({
+      method: "GMAIL",
+      id_token: idToken,
+    });
     setLoading(false);
 
     if (!result.ok) {
@@ -74,49 +86,32 @@ export function RegisterForm() {
       return;
     }
 
-    afterOtpAuth(result.data);
+    if (result.kind === "jwt") {
+      afterOtpAuth(result.data);
+      return;
+    }
   }
 
-  const requestPhoneOtp = useCallback(async () => {
-    const validationError = validatePhoneNumber(phoneNumber);
-    if (validationError) {
-      setFieldError(validationError);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setFieldError(null);
-
-    const result = await sendOtp(phoneNumber.trim());
-    setLoading(false);
-
-    if (!result.ok) {
-      setError(mapAuthErrorMessage(result.error));
-      return;
-    }
-
-    setActiveChannel("phone");
-    setStep("otp");
-    setLastSentAt(Date.now());
-    setOtpMessage(result.data.detail);
-    if (result.data.dev_code) {
-      setOtpCode(result.data.dev_code);
-    }
-  }, [phoneNumber]);
-
-  const requestEmailOtpFlow = useCallback(async () => {
+  const submitEmailRegister = useCallback(async () => {
     const validationError = validateEmail(email);
     if (validationError) {
       setFieldError(validationError);
       return;
     }
+    if (password.length < 8) {
+      setFieldError("Le mot de passe doit contenir au moins 8 caractères.");
+      return;
+    }
 
     setLoading(true);
     setError(null);
     setFieldError(null);
 
-    const result = await requestEmailOtp(email);
+    const result = await registerUser({
+      method: "EMAIL",
+      email: email.trim(),
+      password,
+    });
     setLoading(false);
 
     if (!result.ok) {
@@ -124,21 +119,49 @@ export function RegisterForm() {
       return;
     }
 
-    setActiveChannel("email");
-    setStep("otp");
-    setLastSentAt(Date.now());
-    setOtpMessage(result.data.detail);
-    if (result.data.dev_code) {
-      setOtpCode(result.data.dev_code);
+    if (result.kind === "pending") {
+      applyPendingOtp(result.data, "email");
     }
-  }, [email]);
+  }, [email, password]);
 
-  async function handleStartOtp(event: React.FormEvent) {
+  const submitPhoneRegister = useCallback(async () => {
+    const validationError = validatePhoneNumber(phoneNumber);
+    if (validationError) {
+      setFieldError(validationError);
+      return;
+    }
+    if (password.length < 8) {
+      setFieldError("Le mot de passe doit contenir au moins 8 caractères.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setFieldError(null);
+
+    const result = await registerUser({
+      method: "PHONE",
+      phone_number: phoneNumber.trim(),
+      password,
+    });
+    setLoading(false);
+
+    if (!result.ok) {
+      setError(mapAuthErrorMessage(result.error));
+      return;
+    }
+
+    if (result.kind === "pending") {
+      applyPendingOtp(result.data, "phone");
+    }
+  }, [phoneNumber, password]);
+
+  async function handleStartRegister(event: React.FormEvent) {
     event.preventDefault();
     if (method === "phone") {
-      await requestPhoneOtp();
+      await submitPhoneRegister();
     } else if (method === "email") {
-      await requestEmailOtpFlow();
+      await submitEmailRegister();
     }
   }
 
@@ -146,11 +169,11 @@ export function RegisterForm() {
     setLoading(true);
     setError(null);
 
-    const result =
+    const result = await verifyOtpUnified(
       activeChannel === "phone"
-        ? await verifyOtp(phoneNumber.trim(), code)
-        : await verifyEmailOtp(email.trim(), code);
-
+        ? { phone_number: phoneNumber.trim(), code }
+        : { email: email.trim(), code },
+    );
     setLoading(false);
 
     if (!result.ok) {
@@ -162,10 +185,25 @@ export function RegisterForm() {
   }
 
   async function handleResendOtp() {
-    if (activeChannel === "phone") {
-      await requestPhoneOtp();
-    } else {
-      await requestEmailOtpFlow();
+    setLoading(true);
+    setError(null);
+
+    const result = await resendOtp(
+      activeChannel === "phone"
+        ? { phone_number: phoneNumber.trim() }
+        : { email: email.trim() },
+    );
+    setLoading(false);
+
+    if (!result.ok) {
+      setError(mapAuthErrorMessage(result.error));
+      return;
+    }
+
+    setLastSentAt(Date.now());
+    setOtpMessage(result.data.detail);
+    if (result.data.dev_code) {
+      setOtpCode(result.data.dev_code);
     }
   }
 
@@ -199,8 +237,8 @@ export function RegisterForm() {
           </p>
           <h1 className="text-2xl font-semibold text-zinc-900">Inscription</h1>
           <p className="text-sm leading-6 text-zinc-600">
-            Choisissez Google, téléphone ou email, validez l&apos;OTP puis
-            complétez votre profil.
+            Créez votre compte, validez l&apos;OTP (email/SMS) puis complétez
+            votre profil.
           </p>
         </header>
 
@@ -208,19 +246,20 @@ export function RegisterForm() {
           <>
             <AuthMethodTabs active={method} onChange={handleMethodChange} />
 
-            {method === "google" && (
+            {/* Monté en permanence pour éviter GSI re-initialize au changement d'onglet */}
+            <div className={method === "google" ? "mb-0" : "hidden"} aria-hidden={method !== "google"}>
               <GoogleAuthButton
-                disabled={loading}
+                disabled={loading || method !== "google"}
                 onSuccess={(token) => void handleGoogleSuccess(token)}
                 onError={setError}
               />
-            )}
+            </div>
 
             {method === "phone" && (
               <form
                 data-testid="register-phone-form"
                 noValidate
-                onSubmit={(e) => void handleStartOtp(e)}
+                onSubmit={(e) => void handleStartRegister(e)}
                 className="space-y-4"
               >
                 <label className="block text-sm font-medium text-zinc-700">
@@ -231,6 +270,18 @@ export function RegisterForm() {
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     placeholder="+2693900000"
+                    className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none ring-zinc-400 focus:ring-2"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-zinc-700">
+                  Mot de passe
+                  <input
+                    data-testid="register-password-input"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    minLength={8}
+                    autoComplete="new-password"
                     className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none ring-zinc-400 focus:ring-2"
                   />
                 </label>
@@ -245,7 +296,7 @@ export function RegisterForm() {
                   disabled={loading}
                   className="w-full rounded-full bg-zinc-900 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
                 >
-                  {loading ? "Envoi…" : "Recevoir le code SMS"}
+                  {loading ? "Inscription…" : "S'inscrire et recevoir le SMS"}
                 </button>
               </form>
             )}
@@ -254,7 +305,7 @@ export function RegisterForm() {
               <form
                 data-testid="register-email-form"
                 noValidate
-                onSubmit={(e) => void handleStartOtp(e)}
+                onSubmit={(e) => void handleStartRegister(e)}
                 className="space-y-4"
               >
                 <label className="block text-sm font-medium text-zinc-700">
@@ -265,6 +316,18 @@ export function RegisterForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="nouveau@exemple.com"
+                    className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none ring-zinc-400 focus:ring-2"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-zinc-700">
+                  Mot de passe
+                  <input
+                    data-testid="register-password-input"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    minLength={8}
+                    autoComplete="new-password"
                     className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none ring-zinc-400 focus:ring-2"
                   />
                 </label>
@@ -279,7 +342,7 @@ export function RegisterForm() {
                   disabled={loading}
                   className="w-full rounded-full bg-zinc-900 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
                 >
-                  {loading ? "Envoi…" : "Recevoir le code"}
+                  {loading ? "Inscription…" : "S'inscrire et recevoir le code"}
                 </button>
               </form>
             )}

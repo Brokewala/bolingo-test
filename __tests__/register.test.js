@@ -23,7 +23,10 @@ jest.mock("next/link", () => ({
 }));
 
 jest.mock("@react-oauth/google", () => ({
-  GoogleLogin: () => <div data-testid="google-login-mock">Google Login</div>,
+  useGoogleOAuth: () => ({
+    clientId: "test-client-id",
+    scriptLoadedSuccessfully: true,
+  }),
 }));
 
 jest.mock("@/lib/api/auth");
@@ -54,17 +57,17 @@ describe("Page Inscription — RegisterForm", () => {
   });
 
   test("affiche le formulaire profil après validation OTP email", async () => {
-    authApi.requestEmailOtp.mockResolvedValueOnce({
+    authApi.registerUser.mockResolvedValueOnce({
       ok: true,
+      kind: "pending",
       data: {
         detail: "Code OTP envoyé.",
         expires_in_seconds: 300,
-        account_exists: false,
         dev_code: "112233",
       },
     });
 
-    authApi.verifyEmailOtp.mockResolvedValueOnce({
+    authApi.verifyOtpUnified.mockResolvedValueOnce({
       ok: true,
       data: authSuccessMock,
     });
@@ -73,6 +76,7 @@ describe("Page Inscription — RegisterForm", () => {
     render(<RegisterForm />);
 
     await user.type(screen.getByTestId("register-email-input"), "new@bolingo.km");
+    await user.type(screen.getByTestId("register-password-input"), "password123");
     await user.click(screen.getByTestId("register-email-submit"));
 
     await user.click(screen.getByTestId("otp-submit-button"));
@@ -87,17 +91,17 @@ describe("Page Inscription — RegisterForm", () => {
   });
 
   test("refuse la soumission si île ou ville est vide", async () => {
-    authApi.requestEmailOtp.mockResolvedValueOnce({
+    authApi.registerUser.mockResolvedValueOnce({
       ok: true,
+      kind: "pending",
       data: {
         detail: "Code OTP envoyé.",
         expires_in_seconds: 300,
-        account_exists: false,
         dev_code: "445566",
       },
     });
 
-    authApi.verifyEmailOtp.mockResolvedValueOnce({
+    authApi.verifyOtpUnified.mockResolvedValueOnce({
       ok: true,
       data: authSuccessMock,
     });
@@ -106,6 +110,7 @@ describe("Page Inscription — RegisterForm", () => {
     render(<RegisterForm />);
 
     await user.type(screen.getByTestId("register-email-input"), "new@bolingo.km");
+    await user.type(screen.getByTestId("register-password-input"), "password123");
     await user.click(screen.getByTestId("register-email-submit"));
     await user.click(screen.getByTestId("otp-submit-button"));
 
@@ -125,17 +130,17 @@ describe("Page Inscription — RegisterForm", () => {
   });
 
   test("redirige vers l'accueil et stocke le JWT après inscription réussie", async () => {
-    authApi.requestEmailOtp.mockResolvedValueOnce({
+    authApi.registerUser.mockResolvedValueOnce({
       ok: true,
+      kind: "pending",
       data: {
         detail: "Code OTP envoyé.",
         expires_in_seconds: 300,
-        account_exists: false,
         dev_code: "778899",
       },
     });
 
-    authApi.verifyEmailOtp.mockResolvedValueOnce({
+    authApi.verifyOtpUnified.mockResolvedValueOnce({
       ok: true,
       data: authSuccessMock,
     });
@@ -156,6 +161,7 @@ describe("Page Inscription — RegisterForm", () => {
     render(<RegisterForm />);
 
     await user.type(screen.getByTestId("register-email-input"), "ali@bolingo.km");
+    await user.type(screen.getByTestId("register-password-input"), "password123");
     await user.click(screen.getByTestId("register-email-submit"));
     await user.click(screen.getByTestId("otp-submit-button"));
 

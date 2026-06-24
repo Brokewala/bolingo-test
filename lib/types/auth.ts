@@ -44,12 +44,31 @@ export type SendOTPSuccess = {
   dev_code?: string | null;
 };
 
-export type EmailRequestOTPSuccess = {
+export type RegisterPendingSuccess = {
   detail: string;
+  method: string;
+  cible: string;
+  est_actif: boolean;
   expires_in_seconds: number;
-  account_exists: boolean;
   dev_code?: string | null;
 };
+
+export type RegisterPayload = {
+  method: "GMAIL" | "EMAIL" | "PHONE";
+  id_token?: string;
+  email?: string;
+  phone_number?: string;
+  password?: string;
+};
+
+export type RegisterResult =
+  | { ok: true; kind: "jwt"; data: AuthSuccess }
+  | { ok: true; kind: "pending"; data: RegisterPendingSuccess }
+  | { ok: false; status: number; error: string };
+
+export type ResendOTPResult =
+  | { ok: true; data: RegisterPendingSuccess }
+  | { ok: false; status: number; error: string };
 
 export type RegistrationCompletePayload = {
   prenom: string;
@@ -83,7 +102,7 @@ export type SendOTPResult =
   | { ok: false; status: number; error: string };
 
 export type EmailRequestOTPResult =
-  | { ok: true; data: EmailRequestOTPSuccess }
+  | { ok: true; data: RegisterPendingSuccess }
   | { ok: false; status: number; error: string };
 
 export type VerifyOTPResult = AuthResult;

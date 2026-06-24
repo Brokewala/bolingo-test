@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest",
+    "test": "node --max-old-space-size=4096 ./node_modules/jest/bin/jest.js --runInBand",
     "test:watch": "jest --watch"
   },
   "dependencies": {

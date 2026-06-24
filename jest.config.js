@@ -10,6 +10,9 @@ const customJestConfig = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
   },
+  // Évite OOM avec next/jest (workers parallèles + compilation Next.js)
+  maxWorkers: 1,
+  workerIdleMemoryLimit: "512MB",
 };
 
 module.exports = createJestConfig(customJestConfig);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { isResendDisabled, ResendTimer } from "@/components/auth/resend-timer";
 import { validateOtpCode } from "@/lib/auth/validation";
@@ -37,13 +37,10 @@ export function OtpVerifyForm({
   submitLabel = "Valider le code",
 }: Props) {
   const [fieldError, setFieldError] = useState<string | null>(null);
-  const [resendDisabled, setResendDisabled] = useState(() =>
-    isResendDisabled(lastSentAt),
-  );
+  const [, setTick] = useState(0);
+  const handleTimerTick = useCallback(() => setTick((value) => value + 1), []);
 
-  useEffect(() => {
-    setResendDisabled(isResendDisabled(lastSentAt));
-  }, [lastSentAt]);
+  const resendDisabled = loading || isResendDisabled(lastSentAt);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -59,6 +56,7 @@ export function OtpVerifyForm({
   return (
     <form
       data-testid="otp-verify-form"
+      noValidate
       onSubmit={handleSubmit}
       className="space-y-4"
     >
@@ -102,10 +100,7 @@ export function OtpVerifyForm({
         </p>
       )}
 
-      <ResendTimer
-        lastSentAt={lastSentAt}
-        onResendReady={() => setResendDisabled(false)}
-      />
+      <ResendTimer lastSentAt={lastSentAt} onTick={handleTimerTick} />
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <button

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { OTP_RESEND_COOLDOWN_SECONDS } from "@/lib/constants/auth";
 
@@ -8,14 +8,18 @@ type Props = {
   /** Timestamp (ms) du dernier envoi OTP — déclenche le compte à rebours. */
   lastSentAt: number | null;
   onResendReady?: () => void;
+  /** Force le parent à se re-rendre chaque seconde (état bouton renvoi). */
+  onTick?: () => void;
 };
 
 /**
  * Compte à rebours visuel de 60 secondes pour le bouton « Renvoyer le code ».
  * Exporte l'état via data-testid pour les tests automatisés.
  */
-export function ResendTimer({ lastSentAt, onResendReady }: Props) {
+export function ResendTimer({ lastSentAt, onResendReady, onTick }: Props) {
   const [secondsLeft, setSecondsLeft] = useState(0);
+  const onTickRef = useRef(onTick);
+  onTickRef.current = onTick;
 
   useEffect(() => {
     if (!lastSentAt) {
@@ -27,6 +31,7 @@ export function ResendTimer({ lastSentAt, onResendReady }: Props) {
       const elapsed = Math.floor((Date.now() - lastSentAt!) / 1000);
       const remaining = Math.max(0, OTP_RESEND_COOLDOWN_SECONDS - elapsed);
       setSecondsLeft(remaining);
+      onTickRef.current?.();
 
       if (remaining === 0) {
         onResendReady?.();

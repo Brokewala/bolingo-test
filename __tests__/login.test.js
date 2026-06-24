@@ -3,7 +3,7 @@
  * Jest + React Testing Library
  */
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { LoginForm } from "@/components/auth/login-form";
@@ -29,6 +29,11 @@ jest.mock("@/lib/api/auth");
 describe("Page Connexion — LoginForm", () => {
   beforeEach(() => {
     mockReplace.mockClear();
+    jest.useRealTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   test("valide le format email invalide", async () => {
@@ -84,7 +89,8 @@ describe("Page Connexion — LoginForm", () => {
   });
 
   test("désactive le bouton renvoi pendant 60 secondes", async () => {
-    jest.useFakeTimers();
+    const start = new Date("2026-01-01T12:00:00Z");
+    jest.useFakeTimers({ now: start, advanceTimers: true });
 
     authApi.requestEmailOtp.mockResolvedValue({
       ok: true,
@@ -95,7 +101,9 @@ describe("Page Connexion — LoginForm", () => {
       },
     });
 
-    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    const user = userEvent.setup({
+      advanceTimers: jest.advanceTimersByTime,
+    });
     render(<LoginForm />);
 
     await user.type(screen.getByTestId("email-input"), "user@bolingo.km");
@@ -104,16 +112,20 @@ describe("Page Connexion — LoginForm", () => {
     const resendButton = await screen.findByTestId("otp-resend-button");
     expect(resendButton).toBeDisabled();
 
-    jest.advanceTimersByTime(30_000);
+    await act(async () => {
+      jest.advanceTimersByTime(30_000);
+    });
+
     expect(resendButton).toBeDisabled();
     expect(screen.getByTestId("otp-resend-seconds")).toHaveTextContent("30");
 
-    jest.advanceTimersByTime(30_000);
+    await act(async () => {
+      jest.advanceTimersByTime(31_000);
+    });
+
     await waitFor(() => {
       expect(resendButton).not.toBeDisabled();
     });
-
-    jest.useRealTimers();
   });
 
   test("affiche un message d'erreur API mappé (code expiré)", async () => {
@@ -139,6 +151,9 @@ describe("Page Connexion — LoginForm", () => {
     await user.type(screen.getByTestId("email-input"), "user@bolingo.km");
     await user.click(screen.getByTestId("email-request-otp"));
 
+    await waitFor(() => {
+      expect(screen.getByTestId("otp-code-input")).toHaveValue("654321");
+    });
     await user.click(screen.getByTestId("otp-submit-button"));
 
     expect(await screen.findByTestId("auth-error")).toHaveTextContent(

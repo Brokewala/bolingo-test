@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bolingo Test",
-  description: "Page de test — authentification Google",
+  title: "Bolingo",
+  description: "Authentification hybride — Google, SMS et Email OTP",
 };
 
 export default function RootLayout({

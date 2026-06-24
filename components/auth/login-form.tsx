@@ -196,6 +196,7 @@ export function LoginForm() {
         {method === "phone" && step === "input" && (
           <form
             data-testid="phone-request-form"
+            noValidate
             onSubmit={(e) => void handleRequestOtp(e)}
             className="space-y-4"
           >
@@ -229,6 +230,7 @@ export function LoginForm() {
         {method === "email" && step === "input" && (
           <form
             data-testid="email-request-form"
+            noValidate
             onSubmit={(e) => void handleRequestOtp(e)}
             className="space-y-4"
           >

@@ -219,6 +219,7 @@ export function RegisterForm() {
             {method === "phone" && (
               <form
                 data-testid="register-phone-form"
+                noValidate
                 onSubmit={(e) => void handleStartOtp(e)}
                 className="space-y-4"
               >
@@ -252,6 +253,7 @@ export function RegisterForm() {
             {method === "email" && (
               <form
                 data-testid="register-email-form"
+                noValidate
                 onSubmit={(e) => void handleStartOtp(e)}
                 className="space-y-4"
               >

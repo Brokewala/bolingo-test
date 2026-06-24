@@ -12,6 +12,7 @@ import {
   loginWithPassword,
 } from "@/lib/api/auth";
 import { mapAuthErrorMessage } from "@/lib/auth/errors";
+import { resolveDashboardPath } from "@/lib/auth/dashboard";
 import { saveAuthSession } from "@/lib/auth/session";
 import { validateEmail, validatePhoneNumber } from "@/lib/auth/validation";
 import type { AuthSuccess } from "@/lib/types/auth";
@@ -37,7 +38,7 @@ export function LoginForm() {
 
   function handleAuthSuccess(data: AuthSuccess) {
     saveAuthSession(data);
-    router.replace("/");
+    router.replace(resolveDashboardPath(data.user));
   }
 
   async function handleGoogleSuccess(idToken: string) {

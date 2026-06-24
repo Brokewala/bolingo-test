@@ -10,6 +10,7 @@ import {
   dashboardPath,
   resolveDashboardKind,
   resolveDashboardPath,
+  userDisplayName,
 } from "@/lib/auth/dashboard";
 import {
   clearAuthSession,
@@ -146,7 +147,7 @@ export function DashboardShell({ kind }: DashboardShellProps) {
               Dashboard — {DASHBOARD_LABELS[kind]}
             </p>
             <h1 className="mt-1 text-2xl font-semibold text-zinc-900">
-              Bienvenue, {user.first_name || "utilisateur"}
+              Bienvenue, {userDisplayName(user)}
             </h1>
             <p className="mt-2 text-sm text-zinc-600">
               {session.is_new_user
@@ -181,6 +182,12 @@ export function DashboardShell({ kind }: DashboardShellProps) {
         </div>
 
         <dl className="mb-6 grid gap-3 rounded-xl bg-zinc-50 p-4 text-sm">
+          <div className="grid grid-cols-3 gap-2">
+            <dt className="font-medium text-zinc-500">Email</dt>
+            <dd className="col-span-2 text-zinc-900">
+              {profile?.email ?? session.user.email ?? "—"}
+            </dd>
+          </div>
           <div className="grid grid-cols-3 gap-2">
             <dt className="font-medium text-zinc-500">is_buyer</dt>
             <dd className="col-span-2 text-zinc-900">

@@ -72,7 +72,18 @@ describe("Page Connexion — LoginForm", () => {
         access: "access-token",
         refresh: "refresh-token",
         is_new_user: false,
-        user: { id: 1, roles: ["BUYER"] },
+        user: {
+          id: 1,
+          roles: ["BUYER"],
+          is_buyer: true,
+          is_seller: false,
+          is_staff: false,
+          first_name: "",
+          last_name: "",
+          avatar_url: "",
+          google_id: null,
+          phone_number: null,
+        },
       },
     });
 
@@ -88,7 +99,7 @@ describe("Page Connexion — LoginForm", () => {
       email: "test@bolingo.km",
       password: "password123",
     });
-    expect(mockReplace).toHaveBeenCalledWith("/");
+    expect(mockReplace).toHaveBeenCalledWith("/dashboard/buyer");
   });
 
   test("affiche un message d'erreur API mappé (compte non activé)", async () => {

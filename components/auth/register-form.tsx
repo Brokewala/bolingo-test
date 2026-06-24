@@ -19,6 +19,7 @@ import {
 } from "@/lib/api/auth";
 import { completeRegistration } from "@/lib/api/users";
 import { mapAuthErrorMessage } from "@/lib/auth/errors";
+import { resolveDashboardPath } from "@/lib/auth/dashboard";
 import { saveAuthSession, updateAuthUser } from "@/lib/auth/session";
 import { validateEmail, validatePhoneNumber } from "@/lib/auth/validation";
 import type { AuthSuccess, RegisterPendingSuccess } from "@/lib/types/auth";
@@ -225,7 +226,7 @@ export function RegisterForm() {
     }
 
     updateAuthUser(result.data.profile);
-    router.replace("/");
+    router.replace(resolveDashboardPath(result.data.profile));
   }
 
   return (

@@ -190,7 +190,7 @@ describe("Page Inscription — RegisterForm", () => {
     expect(stored.refresh).toBe("refresh-token-test");
 
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith("/");
+      expect(mockReplace).toHaveBeenCalledWith("/dashboard/buyer");
     });
   });
 });

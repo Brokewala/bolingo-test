@@ -3,6 +3,9 @@ export type AuthUserProfile = {
   id: number;
   google_id: string | null;
   phone_number: string | null;
+  email?: string;
+  prenom?: string;
+  nom?: string;
   first_name: string;
   last_name: string;
   avatar_url: string;
@@ -17,6 +20,9 @@ export type AuthUserProfile = {
 export type UserOut = {
   id: number;
   username: string;
+  email?: string;
+  prenom?: string;
+  nom?: string;
   first_name: string;
   last_name: string;
   phone_number: string | null;

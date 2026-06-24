@@ -17,3 +17,16 @@ export function dashboardPath(kind: DashboardKind): string {
 export function resolveDashboardPath(user: AuthUserProfile): string {
   return dashboardPath(resolveDashboardKind(user));
 }
+
+/** Nom affiché (API login = prenom/nom, legacy = first_name/last_name). */
+export function userDisplayName(user: {
+  prenom?: string;
+  nom?: string;
+  first_name?: string;
+  last_name?: string;
+}): string {
+  const first = user.prenom?.trim() || user.first_name?.trim() || "";
+  const last = user.nom?.trim() || user.last_name?.trim() || "";
+  const full = [first, last].filter(Boolean).join(" ");
+  return full || "utilisateur";
+}

@@ -1,6 +1,22 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+import { resolveDashboardPath } from "@/lib/auth/dashboard";
+import { getAuthSession } from "@/lib/auth/session";
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const auth = getAuthSession();
+    if (auth) {
+      router.replace(resolveDashboardPath(auth.user));
+    }
+  }, [router]);
+
   return (
     <div className="flex flex-1 flex-col items-center justify-center bg-zinc-50 px-4">
       <main className="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-10 text-center shadow-sm">

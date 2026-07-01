@@ -99,9 +99,19 @@ export type ApiError = {
   detail: string;
 };
 
+/** Réponse 403 — compte inactif (OTP non validé), sans JWT */
+export type AccountNotVerified = {
+  detail: string;
+  code: "ACCOUNT_NOT_VERIFIED";
+  target: "OTP_VERIFICATION_REQUIRED";
+  message: string;
+  email?: string | null;
+  phone_number?: string | null;
+};
+
 export type AuthResult =
   | { ok: true; data: AuthSuccess }
-  | { ok: false; status: number; error: string };
+  | { ok: false; status: number; error: string; accountNotVerified?: AccountNotVerified };
 
 export type SendOTPResult =
   | { ok: true; data: SendOTPSuccess }

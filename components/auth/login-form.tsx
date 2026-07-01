@@ -90,6 +90,17 @@ export function LoginForm() {
     setLoading(false);
 
     if (!result.ok) {
+      if (result.accountNotVerified) {
+        const params = new URLSearchParams();
+        if (result.accountNotVerified.email) {
+          params.set("email", result.accountNotVerified.email);
+        }
+        if (result.accountNotVerified.phone_number) {
+          params.set("phone_number", result.accountNotVerified.phone_number);
+        }
+        router.replace(`/otp-verification?${params.toString()}`);
+        return;
+      }
       setError(mapAuthErrorMessage(result.error));
       return;
     }

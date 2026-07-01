@@ -106,7 +106,15 @@ describe("Page Connexion — LoginForm", () => {
     authApi.loginWithPassword.mockResolvedValueOnce({
       ok: false,
       status: 403,
-      error: "Compte non activé. Validez l'OTP reçu lors de l'inscription.",
+      error: "Votre compte n'est pas encore validé.",
+      accountNotVerified: {
+        detail: "Compte non activé.",
+        code: "ACCOUNT_NOT_VERIFIED",
+        target: "OTP_VERIFICATION_REQUIRED",
+        message: "Votre compte n'est pas encore validé.",
+        email: "user@bolingo.km",
+        phone_number: null,
+      },
     });
 
     const user = userEvent.setup();
@@ -116,8 +124,8 @@ describe("Page Connexion — LoginForm", () => {
     await user.type(screen.getByTestId("password-input"), "password123");
     await user.click(screen.getByTestId("email-login-submit"));
 
-    expect(await screen.findByTestId("auth-error")).toHaveTextContent(
-      /non activé/i,
+    expect(mockReplace).toHaveBeenCalledWith(
+      "/otp-verification?email=user%40bolingo.km",
     );
   });
 });

@@ -113,21 +113,47 @@ export async function loginWithPassword(payload: {
   phone_number?: string;
   password: string;
 }): Promise<AuthResult> {
-  const result = await clientFetch<AuthSuccess>("/api/auth/login", {
+  const response = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
-  if (!result.ok) {
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    return { ok: false, status: response.status, error: NETWORK_ERROR };
+  }
+
+  if (response.status === 403) {
+    const body = data as Record<string, unknown>;
+    if (body.code === "ACCOUNT_NOT_VERIFIED") {
+      return {
+        ok: false,
+        status: 403,
+        error: String(body.message ?? body.detail ?? "Compte non activé."),
+        accountNotVerified: data as import("@/lib/types/auth").AccountNotVerified,
+      };
+    }
+  }
+
+  if (!response.ok) {
+    const detail =
+      typeof data === "object" &&
+      data !== null &&
+      "detail" in data &&
+      typeof (data as { detail: unknown }).detail === "string"
+        ? (data as { detail: string }).detail
+        : `Erreur HTTP ${response.status}`;
     return {
       ok: false,
-      status: result.status,
-      error: mapError(result.status, result.error),
+      status: response.status,
+      error: mapError(response.status, detail),
     };
   }
 
-  return { ok: true, data: result.data };
+  return { ok: true, data: data as AuthSuccess };
 }
 
 export async function loginWithGoogleIdToken(
